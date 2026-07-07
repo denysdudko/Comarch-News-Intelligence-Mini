@@ -1,0 +1,205 @@
+{
+  "name": "CNI - Source Listener",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1104,
+        -144
+      ],
+      "id": "87cfde4b-4639-47e2-8f2d-ae9f9d128465",
+      "name": "Telegram Trigger",
+      "webhookId": "fecfe1ef-3df7-4726-a088-e7e5d2ce6814",
+      "credentials": {
+        "telegramApi": {
+          "id": "NoTjlhmxAWh2FPOb",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e6fc3dc3-2ea1-4868-986c-07a620900d44",
+              "leftValue": "={{ $json.source_message_id !== undefined }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -688,
+        -144
+      ],
+      "id": "9a14b828-8a01-4be5-a31a-100a7252e034",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -48
+      ],
+      "id": "876c0c05-91a9-43ec-967c-8a021726fae8",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM target_chats\nWHERE active = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -480,
+        -240
+      ],
+      "id": "bdec0a9a-c6d2-4c39-be5a-b4ddc30d2764",
+      "name": "Get Target Chats",
+      "credentials": {
+        "postgres": {
+          "id": "waHdZul7xNZt1GpF",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO processed_messages (\n    source_chat_id,\n    source_message_id\n)\nVALUES (\n    $1,\n    $2\n)\nON CONFLICT DO NOTHING\nRETURNING source_message_id;",
+        "options": {
+          "queryReplacement": "={{ $json.message.chat.id }},{{ $json.message.message_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -896,
+        -144
+      ],
+      "id": "7a501607-e803-478e-b49b-2c6303242b4a",
+      "name": "Dedup",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "waHdZul7xNZt1GpF",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const targetChats = $input.all().map(item => item.json);\n\nconst triggerData = $('Telegram Trigger').first().json.message;\n\nconst languages = [...new Set(\n  targetChats.flatMap(chat => chat.languages)\n)];\n\nreturn [{\n  json: {\n    sourceMessage: triggerData.text,\n    sourceMessageId: triggerData.message_id,\n    sourceChatId: triggerData.chat.id,\n    targetChats,\n    languages\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        -240
+      ],
+      "id": "912dff1e-c5ca-4789-a5e3-cc35fd05fe7d",
+      "name": "Build Context"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Dedup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get Target Chats",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedup": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Target Chats": {
+      "main": [
+        [
+          {
+            "node": "Build Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Context": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "1fc9ebb6-3f01-4997-bd55-058c994cf4de",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f8634e4e8790807446839796d8d74c248c8c137510e6226f5363cd6c71a21c87"
+  },
+  "nodeGroups": [],
+  "id": "tmm4efYrrJI6Ps8V",
+  "tags": []
+}
