@@ -1,12 +1,10 @@
 node_modules/
 .env
 .env.*
+dist/
+coverage/
 *.log
-
-.vscode/settings.json
-
+.vscode/
+.idea/
 *.tmp
-*.bak
-
 .DS_Store
-Thumbs.db
