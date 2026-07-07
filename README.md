@@ -30,6 +30,10 @@ Telegram AI agent that republishes messages from one Telegram group to one or mo
 - scripts/ — helper scripts
 - .github/workflows/ — CI workflows
 
+## Architecture
+
+See docs/architecture/MVP_ARCHITECTURE.md
+
 ## Project Status
 
 MVP
