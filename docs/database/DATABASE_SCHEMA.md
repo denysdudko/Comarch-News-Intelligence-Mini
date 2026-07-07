@@ -2,7 +2,7 @@
 
 ## Overview
 
-The database stores the MVP processing state for Comarch News Intelligence Mini. It keeps configured news sources, source news items, target Telegram chats, and processed Telegram message identifiers used to avoid duplicate processing.
+The database stores the MVP processing state for Comarch News Intelligence Mini. It keeps configured source channels, collected source messages, target Telegram chats, and processed Telegram message identifiers used to avoid duplicate processing.
 
 The schema below reflects the SQL files currently present in `sql/`.
 
@@ -48,7 +48,11 @@ Columns:
 ## news_sources
 
 Purpose:
-Stores configured news sources that can provide content for processing.
+Stores configured source channels used by the Message Collector.
+
+Examples:
+- Telegram group
+- RSS feed (future)
 
 Primary Key:
 - `id`
@@ -68,7 +72,7 @@ Columns:
 ## news_items
 
 Purpose:
-Stores news items and their processing metadata.
+Stores collected source messages and their processing metadata.
 
 Primary Key:
 - `id`
@@ -94,39 +98,37 @@ Columns:
 | content_loaded | boolean | Indicates whether content was loaded. Defaults to `false`. |
 | content_extracted_at | timestamp without time zone | Timestamp when content extraction occurred. |
 
-## telegram_runtime_state
+## ER Diagram
 
-Purpose:
-Stores Telegram runtime state for chat/user interactions.
+```text
+news_sources
+      |
+      |
+      v
+news_items
 
-Primary Key:
-- `id`
+processed_messages
 
-Columns:
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | bigint | Internal runtime state identifier. |
-| chat_id | bigint | Telegram Chat ID. |
-| user_id | bigint | Telegram user ID. |
-| user_name | text | Telegram user name. |
-| user_language | character varying | User language. |
-| status | character varying | Runtime status. Defaults to `waiting`. |
-| queue_version | integer | Queue version. Defaults to `1`. |
-| expert_replied | boolean | Indicates whether an expert replied. Defaults to `false`. |
-| queue_started_at | timestamp with time zone | Timestamp when the queue state started. |
-| last_message_at | timestamp with time zone | Timestamp of the last message. |
-| runtime_state | jsonb | Runtime state payload. |
-| created_at | timestamp with time zone | Creation timestamp. |
-| updated_at | timestamp with time zone | Last update timestamp. |
-| chat_title | text | Telegram chat title. |
+target_chats
+```
 
 ## Relationships
 
 - `news_items.source_id` references `news_sources.id`.
 - `processed_messages` has no foreign key relationships in the current SQL schema.
 - `target_chats` has no foreign key relationships in the current SQL schema.
-- `telegram_runtime_state` has no foreign key relationships in the current SQL schema.
+
+## Current MVP Database Scope
+
+Tables actively used by MVP:
+
+- `target_chats`
+- `processed_messages`
+
+Reserved for future extensions:
+
+- `news_sources`
+- `news_items`
 
 ## Notes
 
